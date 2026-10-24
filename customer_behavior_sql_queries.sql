@@ -87,3 +87,180 @@ FROM customer
 GROUP BY age_group
 ORDER BY total_revenue desc;
 
+-- Q11. Find the top 5 states with the highest average purchase amount.
+SELECT state,
+       ROUND(AVG(purchase_amount), 2) AS avg_purchase
+FROM customer
+GROUP BY state
+ORDER BY avg_purchase DESC
+LIMIT 5;
+
+
+-- Q12. Find products whose average purchase amount is greater than the overall average purchase amount.
+SELECT item_purchased,
+       ROUND(AVG(purchase_amount), 2) AS avg_purchase
+FROM customer
+GROUP BY item_purchased
+HAVING AVG(purchase_amount) > (
+    SELECT AVG(purchase_amount)
+    FROM customer
+)
+ORDER BY avg_purchase DESC;
+
+
+-- Q13. Find the number of customers in each age group.
+SELECT
+    CASE
+        WHEN age BETWEEN 18 AND 25 THEN '18-25'
+        WHEN age BETWEEN 26 AND 35 THEN '26-35'
+        WHEN age BETWEEN 36 AND 45 THEN '36-45'
+        WHEN age BETWEEN 46 AND 55 THEN '46-55'
+        ELSE '56+'
+    END AS age_group,
+    COUNT(*) AS customer_count
+FROM customer
+GROUP BY age_group
+ORDER BY age_group;
+
+
+-- Q14. Find payment methods used by more than 200 customers.
+SELECT payment_method,
+       COUNT(*) AS usage_count
+FROM customer
+GROUP BY payment_method
+HAVING COUNT(*) > 200
+ORDER BY usage_count DESC;
+
+
+-- Q15. Find the highest purchase amount for each product category.
+SELECT category,
+       MAX(purchase_amount) AS highest_purchase
+FROM customer
+GROUP BY category
+ORDER BY highest_purchase DESC;
+
+
+-- Q16. Find product categories with an average review rating above 4.
+SELECT category,
+       ROUND(AVG(review_rating::NUMERIC), 2) AS avg_rating
+FROM customer
+WHERE review_rating IS NOT NULL
+GROUP BY category
+HAVING AVG(review_rating::NUMERIC) > 4
+ORDER BY avg_rating DESC;
+
+
+-- Q17. Find customers whose purchase amount is greater than the average purchase amount of their category.
+SELECT customer_id,
+       item_purchased,
+       category,
+       purchase_amount
+FROM customer c
+WHERE purchase_amount > (
+    SELECT AVG(purchase_amount)
+    FROM customer
+    WHERE category = c.category
+)
+ORDER BY purchase_amount DESC;
+
+
+-- Q18. Rank product categories by total revenue using a window function.
+SELECT category,
+       SUM(purchase_amount) AS total_revenue,
+       RANK() OVER (
+           ORDER BY SUM(purchase_amount) DESC
+       ) AS revenue_rank
+FROM customer
+GROUP BY category
+ORDER BY revenue_rank;
+
+
+-- Q19. Find states where customers have purchased products from at least 4 different categories.
+SELECT state,
+       COUNT(DISTINCT category) AS category_count
+FROM customer
+GROUP BY state
+HAVING COUNT(DISTINCT category) >= 4
+ORDER BY category_count DESC;
+
+
+-- Q20. Compare average purchase amounts for customers who used both a discount and a promo code, neither, or only one.
+SELECT
+    CASE
+        WHEN discount_applied = 'Yes'
+             AND promo_code_used = 'Yes'
+            THEN 'Both Used'
+        WHEN discount_applied = 'No'
+             AND promo_code_used = 'No'
+            THEN 'Neither Used'
+        ELSE 'One Used'
+    END AS offer_usage,
+    COUNT(*) AS customer_count,
+    ROUND(AVG(purchase_amount), 2) AS avg_purchase
+FROM customer
+GROUP BY offer_usage
+ORDER BY avg_purchase DESC;
+
+
+-- Q21. Find products purchased more than 100 times with an average rating of at least 4.
+SELECT item_purchased,
+       COUNT(*) AS purchase_count,
+       ROUND(AVG(review_rating::NUMERIC), 2) AS avg_rating
+FROM customer
+WHERE review_rating IS NOT NULL
+GROUP BY item_purchased
+HAVING COUNT(*) > 100
+   AND AVG(review_rating::NUMERIC) >= 4
+ORDER BY avg_rating DESC;
+
+
+-- Q22. Find combinations of payment method and purchase frequency used by more than 100 customers.
+SELECT payment_method,
+       frequency_of_purchases,
+       COUNT(*) AS customer_count
+FROM customer
+GROUP BY payment_method, frequency_of_purchases
+HAVING COUNT(*) > 100
+ORDER BY customer_count DESC;
+
+
+-- Q23. Find the highest-spending customer or customers in each state.
+WITH ranked_customers AS (
+    SELECT customer_id,
+           state,
+           purchase_amount,
+           RANK() OVER (
+               PARTITION BY state
+               ORDER BY purchase_amount DESC
+           ) AS rnk
+    FROM customer
+)
+SELECT customer_id,
+       state,
+       purchase_amount
+FROM ranked_customers
+WHERE rnk = 1
+ORDER BY state;
+
+
+-- Q24. Count purchases for each product category across different seasons.
+SELECT category,
+       season,
+       COUNT(*) AS purchase_count
+FROM customer
+GROUP BY category, season
+ORDER BY category, purchase_count DESC;
+
+
+-- Q25. Find customers whose previous purchases are above average and whose review rating is below 3.5.
+SELECT customer_id,
+       previous_purchases,
+       review_rating,
+       item_purchased
+FROM customer
+WHERE previous_purchases > (
+    SELECT AVG(previous_purchases)
+    FROM customer
+)
+AND review_rating < 3.5
+ORDER BY previous_purchases DESC;
