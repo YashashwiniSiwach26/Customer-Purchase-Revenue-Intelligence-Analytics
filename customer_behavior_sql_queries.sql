@@ -87,6 +87,7 @@ FROM customer
 GROUP BY age_group
 ORDER BY total_revenue desc;
 
+<<<<<<< HEAD
 -- Q11. Find the top 5 states with the highest average purchase amount.
 SELECT state,
        ROUND(AVG(purchase_amount), 2) AS avg_purchase
@@ -264,3 +265,6 @@ WHERE previous_purchases > (
 )
 AND review_rating < 3.5
 ORDER BY previous_purchases DESC;
+=======
+
+>>>>>>> dd845f9b61d95bfc99c64af39caf646860764cca
