@@ -89,13 +89,12 @@ ORDER BY total_revenue desc;
 
 <<<<<<< HEAD
 -- Q11. Find the top 5 states with the highest average purchase amount.
-SELECT state,
+SELECT location,
        ROUND(AVG(purchase_amount), 2) AS avg_purchase
 FROM customer
-GROUP BY state
+GROUP BY location
 ORDER BY avg_purchase DESC
 LIMIT 5;
-
 
 -- Q12. Find products whose average purchase amount is greater than the overall average purchase amount.
 SELECT item_purchased,
@@ -110,19 +109,20 @@ ORDER BY avg_purchase DESC;
 
 
 -- Q13. Find the number of customers in each age group.
-SELECT
-    CASE
-        WHEN age BETWEEN 18 AND 25 THEN '18-25'
-        WHEN age BETWEEN 26 AND 35 THEN '26-35'
-        WHEN age BETWEEN 36 AND 45 THEN '36-45'
-        WHEN age BETWEEN 46 AND 55 THEN '46-55'
-        ELSE '56+'
-    END AS age_group,
-    COUNT(*) AS customer_count
-FROM customer
-GROUP BY age_group
-ORDER BY age_group;
-
+SELECT age_bracket,
+       COUNT(*) AS customer_count
+FROM (
+    SELECT CASE
+               WHEN age BETWEEN 18 AND 25 THEN '18-25'
+               WHEN age BETWEEN 26 AND 35 THEN '26-35'
+               WHEN age BETWEEN 36 AND 45 THEN '36-45'
+               WHEN age BETWEEN 46 AND 55 THEN '46-55'
+               ELSE '56+'
+           END AS age_bracket
+    FROM customer
+) t
+GROUP BY age_bracket
+ORDER BY age_bracket;
 
 -- Q14. Find payment methods used by more than 200 customers.
 SELECT payment_method,
@@ -177,24 +177,18 @@ ORDER BY revenue_rank;
 
 
 -- Q19. Find states where customers have purchased products from at least 4 different categories.
-SELECT state,
+SELECT location,
        COUNT(DISTINCT category) AS category_count
 FROM customer
-GROUP BY state
+GROUP BY location
 HAVING COUNT(DISTINCT category) >= 4
 ORDER BY category_count DESC;
-
 
 -- Q20. Compare average purchase amounts for customers who used both a discount and a promo code, neither, or only one.
 SELECT
     CASE
-        WHEN discount_applied = 'Yes'
-             AND promo_code_used = 'Yes'
-            THEN 'Both Used'
-        WHEN discount_applied = 'No'
-             AND promo_code_used = 'No'
-            THEN 'Neither Used'
-        ELSE 'One Used'
+        WHEN discount_applied = 'Yes' THEN 'Discount / Promo Used'
+        ELSE 'Neither Used'
     END AS offer_usage,
     COUNT(*) AS customer_count,
     ROUND(AVG(purchase_amount), 2) AS avg_purchase
@@ -228,21 +222,20 @@ ORDER BY customer_count DESC;
 -- Q23. Find the highest-spending customer or customers in each state.
 WITH ranked_customers AS (
     SELECT customer_id,
-           state,
+           location,
            purchase_amount,
            RANK() OVER (
-               PARTITION BY state
+               PARTITION BY location
                ORDER BY purchase_amount DESC
            ) AS rnk
     FROM customer
 )
 SELECT customer_id,
-       state,
+       location,
        purchase_amount
 FROM ranked_customers
 WHERE rnk = 1
-ORDER BY state;
-
+ORDER BY location;
 
 -- Q24. Count purchases for each product category across different seasons.
 SELECT category,
